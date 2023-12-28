@@ -9,5 +9,3 @@ export const defaultCompilerOptions: Required<CompilerOptions> = {
   logErrors: true,
   verbose: false
 }
-
-export type LogLevel = "log" | "warn" | "error"
