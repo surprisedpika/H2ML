@@ -1,11 +1,14 @@
 {
   "name": "h2ml",
-  "module": "index.ts",
-  "type": "module",
+  "module": "src/index.ts",
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
+  },
+  "type": "module",
+  "dependencies": {
+    "htmlparser2": "^9.0.0"
   }
 }
