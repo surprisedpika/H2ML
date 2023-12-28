@@ -1,5 +1,7 @@
 # H2ML
 
+An extension to HTML that improves DX, without changing the final product.
+
 ## Auto-Closing
 ```H2ML
 <div />
@@ -27,9 +29,7 @@ Compiles to:
 ```
 Compiles to:
 ```HTML
-<a href="https://www.github.com">
-	something
-</a>
+<a href="https://www.github.com">something</a>
 ```
 Valid variable names contain only alphanumeric characters, hyphens, and underscores. They are case-insensitive.
 
@@ -40,7 +40,7 @@ Variables can be escaped via the backslash character.
 ```
 Compiles to:
 ```HTML
-<p>\{foo}</p>
+<p>{foo}</p>
 ```
 Variables can be very flexible:
 ```H2ML
