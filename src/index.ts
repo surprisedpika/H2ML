@@ -7,32 +7,7 @@ import * as htmlparser2 from "htmlparser2";
 const test =
   "<html><!repeat class='something'><!repeat>hello</!repeat></!repeat><div></div></html>";
 
-function logger(text: string, level: LogLevel, options: CompilerOptions) {
-  switch (level) {
-    case "error":
-      if (
-        (options.logErrors === undefined &&
-          defaultCompilerOptions.logErrors === true) ||
-        options.logErrors === true
-      ) {
-        console.error(text);
-      }
-      break;
-    case "warn":
-      if (
-        (options.logWarnings === undefined &&
-          defaultCompilerOptions.logWarnings === true) ||
-        options.logWarnings === true
-      ) {
-        console.error(text);
-      }
-      break;
-    case "log":
-      break;
-  }
-}
-
-function compile(input: string, options = defaultCompilerOptions) {
+function compile(input: string, options: CompilerOptions = defaultCompilerOptions) {
 	if (options.logErrors === undefined) options.logErrors = defaultCompilerOptions.logErrors;
 	if (options.logWarnings === undefined) options.logWarnings = defaultCompilerOptions.logWarnings;
 	if (options.verbose === undefined) options.verbose = defaultCompilerOptions.verbose;
