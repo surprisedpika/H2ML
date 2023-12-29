@@ -21,7 +21,7 @@ This only applies for "normal" elements (see w3c spec).
 ## Maths
 
 ```H2ML
-!{5 + 2}
+@{5 + 2}
 ```
 
 Compiles to:
@@ -33,7 +33,7 @@ Compiles to:
 ## Variables
 
 ```H2ML
-<!var
+<@var
 	foo="https://www.github.com"
 	bar="something"
 />
@@ -63,7 +63,7 @@ Compiles to:
 Variables can be very flexible:
 
 ```H2ML
-<!var
+<@var
   d="div"
   e="<p>hello</p>"
 />
@@ -75,7 +75,7 @@ It is up to the developer to ensure their H2ML produces valid HTML, although the
 The compiler will only complete one pass for variables.
 
 ```H2ML
-<!var
+<@var
   x="}"
   y="hello"
 />
@@ -97,11 +97,11 @@ hello
 ## Repetition
 
 ```H2ML
-<!repeat count=2>
+<@repeat count=2>
   <div class="container">
     ...
   </div>
-</!repeat>
+</@repeat>
 ```
 
 Compiles to:
@@ -121,11 +121,11 @@ A "pseudo-for loop" can be constructed using variables.
 
 ```H2ML
 <ul>
-  <!var i=0 />
-  <!repeat count=5>
+  <@var i=0 />
+  <@repeat count=5>
     <li>{i}</li>
     <var i={i + 1}
-  </!repeat>
+  </@repeat>
 </ul>
 ```
 
@@ -144,18 +144,18 @@ Compiles to:
 ## Templates
 
 ```H2ML
-<!template name="hello">
-  <p>Hello, World!</p>
-</!template>
-<!hello />
-<!hello></!hello>
+<@template name="hello">
+  <p>Hello, World@</p>
+</@template>
+<@hello />
+<@hello></@hello>
 ```
 
 Compiles to:
 
 ```HTML
-<p>Hello, World!</p>
-<p>Hello, World!</p>
+<p>Hello, World@</p>
+<p>Hello, World@</p>
 ```
 
 A template name must follow the rules of variable naming. Additionally, it cannot be the same as any existing template name or H2ML tag.
@@ -163,11 +163,11 @@ A template name must follow the rules of variable naming. Additionally, it canno
 Templates can be passed parameters. Parameter names must follow names for variables, and cannot be "children".
 
 ```H2ML
-<!template name="hello">
-  <p>{!text}</p>
-</!template>
+<@template name="hello">
+  <p>{@text}</p>
+</@template>
 
-<!hello text="world" />
+<@hello text="world" />
 ```
 
 Compiles to:
@@ -179,20 +179,20 @@ Compiles to:
 Templates have a built-in "children" parameter.
 
 ```H2ML
-<!template name="paragraph">
+<@template name="paragraph">
   <p>
-    {!children}
+    {@children}
   </p>
-</!template>
+</@template>
 
-<!paragraph>Hello, World!</!paragraph>
+<@paragraph>Hello, World@</@paragraph>
 ```
 
 Compiles to:
 
 ```HTML
 <p>
-  Hello, World!
+  Hello, World
 </p>
 ```
 
@@ -204,16 +204,16 @@ Used for importing templates and making them available in another file.
 
 ```H2ML
 templates.h2ml
-<!template
+<@template
   name="myTemplate"
   ...
 ```
 
 ```H2ML
-<!import
-  src="./templates.h2ml!myTemplate"
+<@import
+  src="./templates.h2ml@myTemplate"
 />
-<!myTemplate />
+<@myTemplate />
 ```
 
 Import statements must contain an src attribute. They can contain a name attribute. Otherwise, the original name of the imported template is used.
