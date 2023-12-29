@@ -12,6 +12,11 @@ const test =
   "<html><@var x='4' y='5' /><p class='test-{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test /><@repeat count='2'><@repeat count='4'><p>hello</p></@repeat><h1>bye</h1></@repeat>";
 
 //TODO: Changing variables inside repeat tags
+//TODO: Escape variables with backslash
+//TODO: Variables in tag names
+//TODO: Variables in name of elements
+//TODO: Templates
+//TODO: Import
 
 function compile(input: string, opts: CompilerOptions) {
   const options = { ...defaultCompilerOptions, ...opts };

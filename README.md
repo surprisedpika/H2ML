@@ -4,24 +4,10 @@ An extension to HTML that improves DX, without changing the final product.
 
 To get started, clone the git repository, run `bun install`, then `bun run ./src/index.ts`
 
-## Auto-Closing
-
-```H2ML
-<div />
-```
-
-Compiles to:
-
-```HTML
-<div></div>
-```
-
-This only applies for "normal" elements (see w3c spec).
-
 ## Maths
 
 ```H2ML
-@{5 + 2}
+{5 + 2}
 ```
 
 Compiles to:
@@ -58,16 +44,6 @@ Compiles to:
 
 ```HTML
 <p>{foo}</p>
-```
-
-Variables can be very flexible:
-
-```H2ML
-<@var
-  d="div"
-  e="<p>hello</p>"
-/>
-<{d}>{e}</{d}>
 ```
 
 It is up to the developer to ensure their H2ML produces valid HTML, although the compiler will issue a warning if the compiled HTML is invalid.
@@ -144,7 +120,7 @@ Compiles to:
 ## Templates
 
 ```H2ML
-<@template name="hello">
+<@template hello>
   <p>Hello, World@</p>
 </@template>
 <@hello />
@@ -164,10 +140,10 @@ Templates can be passed parameters. Parameter names must follow names for variab
 
 ```H2ML
 <@template name="hello">
-  <p>{@text}</p>
+  <p>{_text}</p>
 </@template>
 
-<@hello text="world" />
+<@hello _text="world" />
 ```
 
 Compiles to:
@@ -176,16 +152,16 @@ Compiles to:
 <p>world</p>
 ```
 
-Templates have a built-in "children" parameter.
+Templates have a built-in "\_children" parameter.
 
 ```H2ML
 <@template name="paragraph">
   <p>
-    {@children}
+    {_children}
   </p>
 </@template>
 
-<@paragraph>Hello, World@</@paragraph>
+<@paragraph>Hello, World</@paragraph>
 ```
 
 Compiles to:
