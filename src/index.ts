@@ -5,11 +5,14 @@ import {
   defaultCompilerOptions,
   type CompilerOptions,
   type Console,
+  type Repeat,
 } from "./types";
 
 const test =
-  "<html><@var x='4' y='5' /><p class='{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test />";
-  
+  "<html><@var x='4' y='5' /><p class='test-{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test /><@repeat count='2'><@repeat count='4'><p>hello</p></@repeat><h1>bye</h1></@repeat>";
+
+//TODO: Changing variables inside repeat tags
+
 function compile(input: string, opts: CompilerOptions) {
   const options = { ...defaultCompilerOptions, ...opts };
 
@@ -20,10 +23,18 @@ function compile(input: string, opts: CompilerOptions) {
   };
 
   let out = "";
+  const repeat: Repeat = [];
   let variables: { [key: string]: string } = {};
 
+  const appendToOutput = (newText: string) => {
+    out += newText;
+    repeat.forEach((layer) => {
+      layer.content += newText;
+    });
+  };
+
   const replaceVariables = (input: string) => {
-    c.log("Replacing Variables in String - ", input);
+    c.log(`Finding and replacing variables in string "${input}"`);
     return input.replace(/\{([^{}]+)\}/g, (_, content) => {
       const p = new Parser();
       const expression = p.parse(content);
@@ -50,7 +61,7 @@ function compile(input: string, opts: CompilerOptions) {
       },
       oncomment(data) {
         if (options.preserveComments) {
-          out += `<!--${data}-->`;
+          appendToOutput(`<!--${data}-->`);
         }
       },
       onopentag(name, attribs, _isImplied) {
@@ -62,6 +73,19 @@ function compile(input: string, opts: CompilerOptions) {
                 c.log("Variable", key, "set to", value);
               });
               break;
+            case "@repeat":
+              let count = Math.round(Number(attribs["count"])) ?? 1;
+              if (count === 1) {
+                c.warn(
+                  "Repeat tag found with missing count attribute / count = 1"
+                );
+              }
+              if (count < 1) {
+                c.error("Repeat tag with count outside range!");
+                count = 1;
+              }
+              repeat.push({ depth: count, content: "" });
+              break;
             default:
               c.warn("Unknown H2ML tag", name, "with attributes:", attribs);
               break;
@@ -69,22 +93,30 @@ function compile(input: string, opts: CompilerOptions) {
         } else {
           const attributes = mapAttributes(attribs);
           const joiner = attributes ? " " : "";
-          out += `<${name}${joiner}${attributes}>`;
+          appendToOutput(`<${name}${joiner}${attributes}>`);
         }
       },
       ontext(data) {
-        out += replaceVariables(data);
+        appendToOutput(replaceVariables(data));
       },
       onclosetag(name, isImplied) {
         switch (name) {
-          case "@var":
           case "@repeat":
+            const content = repeat.pop();
+            if (content === undefined) break;
+            if (content.depth < 2) break;
+
+            for (let i = 1; i < content.depth; i++) {
+              appendToOutput(content.content);
+            }
+            break;
+          case "@var":
             break;
           default:
             if (isImplied) {
-              out = out.slice(0, -1) + ' />'
+              out = out.slice(0, -1) + " />";
             } else {
-              out += `</${name}>`
+              appendToOutput(`</${name}>`);
             }
             break;
         }

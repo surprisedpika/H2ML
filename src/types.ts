@@ -17,3 +17,5 @@ export type Console = {
   warn: (...data: any[]) => false | void;
   log: (...data: any[]) => false | void;
 };
+
+export type Repeat = { depth: number; content: string }[];
