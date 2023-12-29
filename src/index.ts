@@ -1,13 +1,15 @@
 import * as htmlparser2 from "htmlparser2";
+import { Parser } from "expr-eval";
+
 import {
   defaultCompilerOptions,
   type CompilerOptions,
   type Console,
 } from "./types";
-import { Parser } from "expr-eval";
-const test =
-  "<html><@repeat class='something' count=2><@var x='4' y='5'></@var><p class={x}></p><@repeat count=5><p>hello</p><@var x='7'></@var></@repeat>{x}</@repeat><div></div></html><!-- comment -->";
 
+const test =
+  "<html><@var x='4' y='5' /><p class='{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test />";
+  
 function compile(input: string, opts: CompilerOptions) {
   const options = { ...defaultCompilerOptions, ...opts };
 
@@ -21,7 +23,8 @@ function compile(input: string, opts: CompilerOptions) {
   let variables: { [key: string]: string } = {};
 
   const replaceVariables = (input: string) => {
-    return input.replace(/\{([^{}]+)\}/g, (_match, content) => {
+    c.log("Replacing Variables in String - ", input);
+    return input.replace(/\{([^{}]+)\}/g, (_, content) => {
       const p = new Parser();
       const expression = p.parse(content);
       return expression.evaluate(variables);
@@ -72,13 +75,17 @@ function compile(input: string, opts: CompilerOptions) {
       ontext(data) {
         out += replaceVariables(data);
       },
-      onclosetag(name, _isImplied) {
+      onclosetag(name, isImplied) {
         switch (name) {
           case "@var":
           case "@repeat":
             break;
           default:
-            out += `</${name}>`;
+            if (isImplied) {
+              out = out.slice(0, -1) + ' />'
+            } else {
+              out += `</${name}>`
+            }
             break;
         }
       },
