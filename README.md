@@ -32,7 +32,7 @@ Compiles to:
 <a href="https://www.github.com">something</a>
 ```
 
-Valid variable names contain only alphanumeric characters, hyphens, and underscores. They are case-insensitive.
+(I don't actually know what a valid variable name is) Valid variable names contain only alphanumeric characters, hyphens, and underscores. They are case-insensitive.
 
 Variables can be escaped via the backslash character.
 
@@ -46,7 +46,7 @@ Compiles to:
 <p>{foo}</p>
 ```
 
-It is up to the developer to ensure their H2ML produces valid HTML, although the compiler will issue a warning if the compiled HTML is invalid.
+It is up to the developer to ensure their H2ML produces valid HTML.
 
 The compiler will only complete one pass for variables.
 
@@ -93,7 +93,7 @@ Compiles to:
 
 If the count attribute is missing, it is assumed to be 1 and a warning is logged by the compiler.
 
-A "pseudo-for loop" can be constructed using variables.
+A "for" loop can be constructed using variables.
 
 ```H2ML
 <ul>
