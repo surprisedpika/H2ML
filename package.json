@@ -9,6 +9,7 @@
   },
   "type": "module",
   "dependencies": {
+    "expr-eval": "^2.0.2",
     "htmlparser2": "^9.0.0"
   }
 }
