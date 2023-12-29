@@ -1,25 +1,12 @@
 import * as htmlparser2 from "htmlparser2";
-import { defaultCompilerOptions, type CompilerOptions, type Console } from "./types";
+import {
+  defaultCompilerOptions,
+  type CompilerOptions,
+  type Console,
+} from "./types";
 import { Parser } from "expr-eval";
 const test =
-  "<html><@repeat class='something' count=2><@var x='4' y='5'></@var><p>{x}</p><@repeat count=5><p>hello</p><@var x='7'></@var></@repeat>{x}</@repeat><div></div></html><!-- comment -->";
-
-const mapAttributes = (attributes: { [s: string]: string }) => {
-  return Object.entries(attributes)
-    .map(([key, value]) => `${key}="${value}"`)
-    .join(" ");
-};
-
-const replaceVariables = (
-  input: string,
-  variables: { [key: string]: string }
-) => {
-  return input.replace(/\{([^{}]+)\}/g, (_match, content) => {
-    const p = new Parser();
-    const expression = p.parse(content);
-    return expression.evaluate(variables);
-  })
-};
+  "<html><@repeat class='something' count=2><@var x='4' y='5'></@var><p class={x}></p><@repeat count=5><p>hello</p><@var x='7'></@var></@repeat>{x}</@repeat><div></div></html><!-- comment -->";
 
 function compile(input: string, opts: CompilerOptions) {
   const options = { ...defaultCompilerOptions, ...opts };
@@ -32,6 +19,20 @@ function compile(input: string, opts: CompilerOptions) {
 
   let out = "";
   let variables: { [key: string]: string } = {};
+
+  const replaceVariables = (input: string) => {
+    return input.replace(/\{([^{}]+)\}/g, (_match, content) => {
+      const p = new Parser();
+      const expression = p.parse(content);
+      return expression.evaluate(variables);
+    });
+  };
+
+  const mapAttributes = (attributes: { [s: string]: string }) => {
+    return Object.entries(attributes)
+      .map(([key, value]) => `${key}="${replaceVariables(value)}"`)
+      .join(" ");
+  };
 
   const parser = new htmlparser2.Parser(
     {
@@ -69,7 +70,7 @@ function compile(input: string, opts: CompilerOptions) {
         }
       },
       ontext(data) {
-        out += replaceVariables(data, variables);
+        out += replaceVariables(data);
       },
       onclosetag(name, _isImplied) {
         switch (name) {
