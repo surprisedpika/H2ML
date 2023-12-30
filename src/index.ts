@@ -17,6 +17,7 @@ const test =
 //TODO: Variables in name of elements
 //TODO: Templates
 //TODO: Import
+//TODO: <p>{something {x}</p>
 
 function compile(input: string, opts: CompilerOptions) {
   const options = { ...defaultCompilerOptions, ...opts };
