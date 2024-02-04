@@ -9,12 +9,10 @@ import {
 } from "./types";
 
 const test =
-  "<html><@var x='4' y='5' /><p class='test-{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test /><@repeat count='2'><@repeat count='4'><p>hello</p></@repeat><h1>bye</h1></@repeat>";
+  "<html><@var x='4' y='5' /><p class='test-{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test /><@repeat count='2'><@repeat count='4'><p>hello</p></@repeat><h1>bye</h1></@repeat><{x}></{x}>";
 
 //TODO: Changing variables inside repeat tags
 //TODO: Escape variables with backslash
-//TODO: Variables in tag names
-//TODO: Variables in name of elements
 //TODO: Templates
 //TODO: Import
 //TODO: <p>{something {x}</p>
@@ -71,6 +69,7 @@ function compile(input: string, opts: CompilerOptions) {
         }
       },
       onopentag(name, attribs, _isImplied) {
+        name = replaceVariables(name);
         if (name.startsWith("@")) {
           switch (name) {
             case "@var":
@@ -106,6 +105,10 @@ function compile(input: string, opts: CompilerOptions) {
         appendToOutput(replaceVariables(data));
       },
       onclosetag(name, isImplied) {
+        if (!isImplied) {
+          name = replaceVariables(name);
+        }
+
         switch (name) {
           case "@repeat":
             const content = repeat.pop();
