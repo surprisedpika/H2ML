@@ -9,12 +9,11 @@ import {
 } from "./types";
 
 const test =
-  "<html><@var x='4' y='5' /><p class='test-{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test /><@repeat count='2'><@repeat count='4'><p>hello</p></@repeat><h1>bye</h1></@repeat><{x}></{x}>";
+  "<html>{something {1 + 2}<@var x='4' y='5' /><p class='test-{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test /><@repeat count='2'><@repeat count='4'><p>hello</p></@repeat><h1>bye</h1></@repeat><{x}></{x}>";
 
 //TODO: Changing variables inside repeat tags
 //TODO: Templates
 //TODO: Import
-//TODO: <p>{something {x}</p>
 
 function compile(input: string, opts: CompilerOptions) {
   const options = { ...defaultCompilerOptions, ...opts };
@@ -39,6 +38,7 @@ function compile(input: string, opts: CompilerOptions) {
   const replaceVariables = (input: string) => {
     c.log(`Finding and replacing variables in string "${input}"`);
     return input.replace(/(\\*)\{([^{}]+)\}/g, (_, escapeCharacters: string, content: string) => {
+      c.log(content);
       const numDelimiters = escapeCharacters.length;
       if (numDelimiters == 0) {
         const p = new Parser();
