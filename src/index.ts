@@ -12,7 +12,6 @@ const test =
   "<html><@var x='4' y='5' /><p class='test-{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test /><@repeat count='2'><@repeat count='4'><p>hello</p></@repeat><h1>bye</h1></@repeat><{x}></{x}>";
 
 //TODO: Changing variables inside repeat tags
-//TODO: Escape variables with backslash
 //TODO: Templates
 //TODO: Import
 //TODO: <p>{something {x}</p>
@@ -39,10 +38,14 @@ function compile(input: string, opts: CompilerOptions) {
 
   const replaceVariables = (input: string) => {
     c.log(`Finding and replacing variables in string "${input}"`);
-    return input.replace(/\{([^{}]+)\}/g, (_, content) => {
-      const p = new Parser();
-      const expression = p.parse(content);
-      return expression.evaluate(variables);
+    return input.replace(/(\\*)\{([^{}]+)\}/g, (_, escapeCharacters: string, content: string) => {
+      const numDelimiters = escapeCharacters.length;
+      if (numDelimiters == 0) {
+        const p = new Parser();
+        const expression = p.parse(content);
+        return expression.evaluate(variables);
+      }
+      return `${"\\".repeat(numDelimiters - 1)}{${content}}`
     });
   };
 
