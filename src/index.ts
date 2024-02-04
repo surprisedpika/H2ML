@@ -25,14 +25,19 @@ function compile(input: string, opts: CompilerOptions) {
   };
 
   let out = "";
+  let isInTemplate: boolean = false;
   const repeat: Repeat = [];
-  let variables: { [key: string]: string } = {};
+  const variables: { [key: string]: string } = {};
 
   const appendToOutput = (newText: string) => {
-    out += newText;
-    repeat.forEach((layer) => {
-      layer.content += newText;
-    });
+    if (!isInTemplate) {
+      out += newText;
+      repeat.forEach((layer) => {
+        layer.content += newText;
+      });
+      return;
+    }
+
   };
 
   const replaceVariables = (input: string) => {
@@ -94,6 +99,12 @@ function compile(input: string, opts: CompilerOptions) {
               }
               repeat.push({ depth: count, content: "" });
               break;
+            case "@template":
+              if (isInTemplate) {
+                throw new Error("Template cannot be inside another template!");
+              }
+              isInTemplate = true;
+              break;
             default:
               c.warn("Unknown H2ML tag", name, "with attributes:", attribs);
               break;
@@ -121,6 +132,12 @@ function compile(input: string, opts: CompilerOptions) {
             for (let i = 1; i < content.depth; i++) {
               appendToOutput(content.content);
             }
+            break;
+          case "@template":
+            if (!isInTemplate) {
+              throw new Error("Closing template tag without matching opening tag!")
+            }
+            isInTemplate = false;
             break;
           case "@var":
             break;
