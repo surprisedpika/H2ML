@@ -10,11 +10,15 @@ import {
 } from "./types";
 
 const test =
-  "<html>{something {1 + 2}<@var x='4' y='5' /><p class='test-{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test /><@repeat count='2'><@repeat count='4'><p>hello</p></@repeat><h1>bye</h1></@repeat><{x}></{x}><@var x='{x - 4}' />{x}";
+  "<@var x='1' /><@repeat count='4'><@repeat count='4'><@var x='{x * 2}' />{x}, </@repeat></@repeat>";
+
+// should be:
+// 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 
 
 //TODO: Changing variables inside repeat tags
 //TODO: Templates
 //TODO: Import
+//TODO: @if ?
 
 export default function compile(input: string, opts: CompilerOptions) {
   const options = { ...defaultCompilerOptions, ...opts };
@@ -30,11 +34,13 @@ export default function compile(input: string, opts: CompilerOptions) {
   const repeat: Repeat = [];
   const variables: VariableSet = {};
 
-  const appendToOutput = (newText: string) => {
+  const appendToOutput = (content: string) => {
     if (!isInTemplate) {
-      out += newText;
+      out += replaceVariables(content);
       repeat.forEach((layer) => {
-        layer.content += newText;
+        Object.keys(layer.variables).length != 0 &&
+          console.table(layer.variables);
+        layer.content += content;
       });
       return;
     }
@@ -86,6 +92,9 @@ export default function compile(input: string, opts: CompilerOptions) {
             case "@var":
               // console.table(attribs);
               Object.entries(attribs).map(([key, value]) => {
+                repeat.forEach((layer) => {
+                  layer.variables[key] = value;
+                });
                 const replaced = replaceVariables(value);
                 variables[key] = replaced;
                 c.log("Variable", key, "set to", replaced);
@@ -122,7 +131,7 @@ export default function compile(input: string, opts: CompilerOptions) {
         }
       },
       ontext(data) {
-        appendToOutput(replaceVariables(data));
+        appendToOutput(data);
       },
       onclosetag(name, isImplied) {
         if (!isImplied) {
@@ -136,6 +145,11 @@ export default function compile(input: string, opts: CompilerOptions) {
             if (content.depth < 2) break;
 
             for (let i = 1; i < content.depth; i++) {
+              Object.entries(content.variables).map(([name, value]) => {
+                const replaced = replaceVariables(value);
+                variables[name] = replaced;
+                c.log("Variable", name, "set to", replaced);
+              });
               appendToOutput(content.content);
             }
             break;
