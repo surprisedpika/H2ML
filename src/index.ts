@@ -15,7 +15,7 @@ const test =
 //TODO: Templates
 //TODO: Import
 
-function compile(input: string, opts: CompilerOptions) {
+export default function compile(input: string, opts: CompilerOptions) {
   const options = { ...defaultCompilerOptions, ...opts };
 
   const c: Console = {
@@ -37,21 +37,23 @@ function compile(input: string, opts: CompilerOptions) {
       });
       return;
     }
-
   };
 
   const replaceVariables = (input: string) => {
     c.log(`Finding and replacing variables in string "${input}"`);
-    return input.replace(/(\\*)\{([^{}]+)\}/g, (_, escapeCharacters: string, content: string) => {
-      c.log(content);
-      const numDelimiters = escapeCharacters.length;
-      if (numDelimiters == 0) {
-        const p = new Parser();
-        const expression = p.parse(content);
-        return expression.evaluate(variables);
+    return input.replace(
+      /(\\*)\{([^{}]+)\}/g,
+      (_, escapeCharacters: string, content: string) => {
+        c.log(content);
+        const numDelimiters = escapeCharacters.length;
+        if (numDelimiters == 0) {
+          const p = new Parser();
+          const expression = p.parse(content);
+          return expression.evaluate(variables);
+        }
+        return `${"\\".repeat(numDelimiters - 1)}{${content}}`;
       }
-      return `${"\\".repeat(numDelimiters - 1)}{${content}}`
-    });
+    );
   };
 
   const mapAttributes = (attributes: { [s: string]: string }) => {
@@ -135,7 +137,9 @@ function compile(input: string, opts: CompilerOptions) {
             break;
           case "@template":
             if (!isInTemplate) {
-              throw new Error("Closing template tag without matching opening tag!")
+              throw new Error(
+                "Closing template tag without matching opening tag!"
+              );
             }
             isInTemplate = false;
             break;
