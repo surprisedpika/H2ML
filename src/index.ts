@@ -10,7 +10,7 @@ import {
 } from "./types";
 
 const test =
-  "<html>{something {1 + 2}<@var x='4' y='5' /><p class='test-{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test /><@repeat count='2'><@repeat count='4'><p>hello</p></@repeat><h1>bye</h1></@repeat><{x}></{x}>";
+  "<html>{something {1 + 2}<@var x='4' y='5' /><p class='test-{x + 2}'></p><p>hello</p><@var x='7' />{x - y}<div></div></html><!-- comment --><test /><@repeat count='2'><@repeat count='4'><p>hello</p></@repeat><h1>bye</h1></@repeat><{x}></{x}><@var x='{x - 4}' />{x}";
 
 //TODO: Changing variables inside repeat tags
 //TODO: Templates
@@ -84,9 +84,12 @@ export default function compile(input: string, opts: CompilerOptions) {
         if (name.startsWith("@")) {
           switch (name) {
             case "@var":
+              // console.table(attribs);
               Object.entries(attribs).map(([key, value]) => {
-                variables[key] = value;
-                c.log("Variable", key, "set to", value);
+                const replaced = replaceVariables(value);
+                variables[key] = replaced;
+                c.log("Variable", key, "set to", replaced);
+                // console.table(variables);
               });
               break;
             case "@repeat":
@@ -100,7 +103,7 @@ export default function compile(input: string, opts: CompilerOptions) {
                 c.error("Repeat tag with count outside range!");
                 count = 1;
               }
-              repeat.push({ depth: count, content: "" });
+              repeat.push({ depth: count, content: "", variables: {} });
               break;
             case "@template":
               if (isInTemplate) {
