@@ -19,3 +19,5 @@ export type Console = {
 };
 
 export type Repeat = { depth: number; content: string; }[];
+
+export type VariableSet = { [key: string]: string };

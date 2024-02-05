@@ -6,6 +6,7 @@ import {
   type CompilerOptions,
   type Console,
   type Repeat,
+  type VariableSet,
 } from "./types";
 
 const test =
@@ -27,7 +28,7 @@ export default function compile(input: string, opts: CompilerOptions) {
   let out = "";
   let isInTemplate: boolean = false;
   const repeat: Repeat = [];
-  const variables: { [key: string]: string } = {};
+  const variables: VariableSet = {};
 
   const appendToOutput = (newText: string) => {
     if (!isInTemplate) {
