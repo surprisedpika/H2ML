@@ -15,19 +15,19 @@ const test =
 // should be:
 // 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 
 
-//TODO: Changing variables inside repeat tags
+//TODO: Nested changing variables inside repeat tags
 //TODO: Templates
 //TODO: Import
 //TODO: @if ?
 
 export default function compile(input: string, opts: CompilerOptions) {
-  const options = { ...defaultCompilerOptions, ...opts };
+  const options = { ...defaultCompilerOptions, ...opts } as const;
 
   const c: Console = {
     error: (...data: any[]) => options.logErrors && console.error(...data),
     warn: (...data: any[]) => options.logWarnings && console.warn(...data),
     log: (...data: any[]) => options.verbose && console.warn(...data),
-  };
+  } as const;
 
   let out = "";
   let isInTemplate: boolean = false;
@@ -38,8 +38,8 @@ export default function compile(input: string, opts: CompilerOptions) {
     if (!isInTemplate) {
       out += replaceVariables(content);
       repeat.forEach((layer) => {
-        Object.keys(layer.variables).length != 0 &&
-          console.table(layer.variables);
+        // Object.keys(layer.variables).length != 0 &&
+        //   console.table(layer.variables);
         layer.content += content;
       });
       return;
@@ -47,17 +47,18 @@ export default function compile(input: string, opts: CompilerOptions) {
   };
 
   const replaceVariables = (input: string) => {
-    c.log(`Finding and replacing variables in string "${input}"`);
+    c.log(`Evaluating variables in "${input}"`);
     return input.replace(
       /(\\*)\{([^{}]+)\}/g,
       (_, escapeCharacters: string, content: string) => {
-        c.log(content);
+        c.log(`  Match found: ${content}`);
         const numDelimiters = escapeCharacters.length;
         if (numDelimiters == 0) {
           const p = new Parser();
           const expression = p.parse(content);
           return expression.evaluate(variables);
         }
+        c.log(`    Match escaped`);
         return `${"\\".repeat(numDelimiters - 1)}{${content}}`;
       }
     );
@@ -148,7 +149,7 @@ export default function compile(input: string, opts: CompilerOptions) {
               Object.entries(content.variables).map(([name, value]) => {
                 const replaced = replaceVariables(value);
                 variables[name] = replaced;
-                c.log("Variable", name, "set to", replaced);
+                c.log("Variable", name, "set to (in repeat)", replaced);
               });
               appendToOutput(content.content);
             }

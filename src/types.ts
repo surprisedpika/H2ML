@@ -10,7 +10,7 @@ export const defaultCompilerOptions: Required<CompilerOptions> = {
   logErrors: true,
   verbose: false,
   preserveComments: false,
-};
+} as const;
 
 export type Console = {
   error: (...data: any[]) => false | void;
