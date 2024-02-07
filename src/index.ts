@@ -6,14 +6,14 @@ import {
   type CompilerOptions,
   type Console,
   type Repeat,
-  type VariableSet,
+  type AttributeSet,
 } from "./types";
 
 const test =
   "<@var x='1' /><@repeat count='4'><@repeat count='4'><@var x='{x * 2}' />{x}, </@repeat></@repeat>";
 
 // should be:
-// 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 
+// 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536,
 
 //TODO: Nested changing variables inside repeat tags
 //TODO: Templates
@@ -32,11 +32,12 @@ export default function compile(input: string, opts: CompilerOptions) {
   let out = "";
   let isInTemplate: boolean = false;
   const repeat: Repeat = [];
-  const variables: VariableSet = {};
+  const variables: AttributeSet = {};
+  const templates: { [name: string]: Template }[] = [];
 
   const appendToOutput = (content: string) => {
     if (!isInTemplate) {
-      out += replaceVariables(content);
+      out += replaceVariables(content, variables);
       repeat.forEach((layer) => {
         // Object.keys(layer.variables).length != 0 &&
         //   console.table(layer.variables);
@@ -46,7 +47,7 @@ export default function compile(input: string, opts: CompilerOptions) {
     }
   };
 
-  const replaceVariables = (input: string) => {
+  const replaceVariables = (input: string, variables: AttributeSet): string => {
     c.log(`Evaluating variables in "${input}"`);
     return input.replace(
       /(\\*)\{([^{}]+)\}/g,
@@ -64,11 +65,25 @@ export default function compile(input: string, opts: CompilerOptions) {
     );
   };
 
-  const mapAttributes = (attributes: { [s: string]: string }) => {
+  const mapAttributes = (attributes: AttributeSet) => {
     return Object.entries(attributes)
-      .map(([key, value]) => `${key}="${replaceVariables(value)}"`)
+      .map(([key, value]) => `${key}="${replaceVariables(value, variables)}"`)
       .join(" ");
   };
+
+  class Template {
+    content: string;
+    variables: AttributeSet;
+
+    constructor(variables: AttributeSet, content: string) {
+      this.content = content;
+      this.variables = variables;
+    }
+
+    generate() {
+      return replaceVariables(this.content, this.variables);
+    }
+  }
 
   const parser = new htmlparser2.Parser(
     {
@@ -86,8 +101,8 @@ export default function compile(input: string, opts: CompilerOptions) {
           appendToOutput(`<!--${data}-->`);
         }
       },
-      onopentag(name, attribs, _isImplied) {
-        name = replaceVariables(name);
+      onopentag(name, attribs: AttributeSet, _isImplied) {
+        name = replaceVariables(name, variables);
         if (name.startsWith("@")) {
           switch (name) {
             case "@var":
@@ -96,7 +111,7 @@ export default function compile(input: string, opts: CompilerOptions) {
                 repeat.forEach((layer) => {
                   layer.variables[key] = value;
                 });
-                const replaced = replaceVariables(value);
+                const replaced = replaceVariables(value, variables);
                 variables[key] = replaced;
                 c.log("Variable", key, "set to", replaced);
                 // console.table(variables);
@@ -136,7 +151,7 @@ export default function compile(input: string, opts: CompilerOptions) {
       },
       onclosetag(name, isImplied) {
         if (!isImplied) {
-          name = replaceVariables(name);
+          name = replaceVariables(name, variables);
         }
 
         switch (name) {
@@ -147,7 +162,7 @@ export default function compile(input: string, opts: CompilerOptions) {
 
             for (let i = 1; i < content.depth; i++) {
               Object.entries(content.variables).map(([name, value]) => {
-                const replaced = replaceVariables(value);
+                const replaced = replaceVariables(value, variables);
                 variables[name] = replaced;
                 c.log("Variable", name, "set to (in repeat)", replaced);
               });

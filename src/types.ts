@@ -18,6 +18,6 @@ export type Console = {
   log: (...data: any[]) => false | void;
 };
 
-export type Repeat = { depth: number; content: string; variables: VariableSet }[];
+export type Repeat = { depth: number; content: string; variables: AttributeSet }[];
 
-export type VariableSet = { [key: string]: string };
+export type AttributeSet = { [s: string]: string };
