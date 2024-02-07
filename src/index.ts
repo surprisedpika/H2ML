@@ -52,7 +52,10 @@ export default function compile(input: string, opts: CompilerOptions) {
 
   // Evaluates all mathematical expressions in a given string.
   // Mathematical expressions are contained within curly braces
-  const evaluateExpressions = (input: string, variables: AttributeSet): string => {
+  const evaluateExpressions = (
+    input: string,
+    variables: AttributeSet
+  ): string => {
     c.log(`Evaluating variables in "${input}"`);
     return input.replace(
       // Regex matches any content contained within curly braces, as well as any immediately preceeding backslashes
@@ -179,7 +182,7 @@ export default function compile(input: string, opts: CompilerOptions) {
             // For each time the content is repeated (value of count attribute) inside the currently closing repeat tag
             for (let i = 1; i < content.count; i++) {
               Object.entries(content.variables).map(([name, value]) => {
-                // Evaluate all expressions as variable values may be expressions.
+// Evaluate all expressions as variable values may be expressions.
                 // The expressions are evaluated now to allow for the changing of variables inside repeat tags
                 // ^ This doesn't currently work for nested repeat tags.
                 const replaced = evaluateExpressions(value, variables);
@@ -222,7 +225,7 @@ console.log(
   compile(test, {
     logErrors: true,
     logWarnings: true,
-    verbose: true,
+    verbose: false,
     preserveComments: true,
   })
 );
