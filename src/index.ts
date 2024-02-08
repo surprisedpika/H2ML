@@ -1,13 +1,9 @@
 import * as htmlparser2 from "htmlparser2";
 import { Parser } from "expr-eval";
 
-import {
-  defaultCompilerOptions,
-  type CompilerOptions,
-  type Console,
-  type Repeat,
-  type AttributeSet,
-} from "./types";
+import type { CompilerOptions, Console, Repeat, AttributeSet } from "./types";
+
+import { defaultCompilerOptions, defaultParserOptions } from "./constants";
 
 //TODO: @var
 //TODO: mathematical expressions
@@ -165,18 +161,13 @@ const evaluateExpressions = (
 
 export default function compile(input: string, opts: CompilerOptions): string {
   const options = { ...defaultCompilerOptions, ...opts } as const;
-  const parserOptions = {
-    xmlMode: true,
-    lowerCaseTags: true,
-    lowerCaseAttributeNames: true,
-  } as const;
 
   const c = makeConsole(options);
 
   const replacedRepeatTags = replaceRepeatTags(
     input,
     options,
-    parserOptions,
+    defaultParserOptions,
     c
   );
 

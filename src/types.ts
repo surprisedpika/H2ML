@@ -5,13 +5,6 @@ export type CompilerOptions = {
   preserveComments?: boolean;
 };
 
-export const defaultCompilerOptions: Required<CompilerOptions> = {
-  logWarnings: true,
-  logErrors: true,
-  verbose: false,
-  preserveComments: false,
-} as const;
-
 export type Console = {
   error: (...data: any[]) => false | void;
   warn: (...data: any[]) => false | void;
