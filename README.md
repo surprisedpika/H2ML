@@ -16,6 +16,20 @@ Compiles to:
 7
 ```
 
+This can be escaped with backslashes
+
+```H2ML
+\{5 + 2}
+\\{5 + 2}
+```
+
+Compiles to:
+
+```HTML
+{5 + 2}
+\{5 + 2}
+```
+
 ## Variables
 
 ```H2ML
@@ -32,21 +46,7 @@ Compiles to:
 <a href="https://www.github.com">something</a>
 ```
 
-(I don't actually know what a valid variable name is) Valid variable names contain only alphanumeric characters, hyphens, and underscores. They are case-insensitive.
-
-Variables can be escaped via the backslash character.
-
-```H2ML
-<p>\{foo}</p>
-```
-
-Compiles to:
-
-```HTML
-<p>{foo}</p>
-```
-
-It is up to the developer to ensure their H2ML produces valid HTML.
+Variables and mathematical expressions are evaluated inside attributes and in normal text data. They are not evaluated in tag names.
 
 The compiler will only complete one pass for variables.
 
@@ -116,6 +116,22 @@ Compiles to:
   <li>4</li>
 </ul>
 ```
+
+## Conditions
+
+```H2ML
+<@if condition={foo == bar}>
+  <p>hello</p>
+</@if>
+```
+
+Compiles to:
+
+```html
+<p>hello</p>
+```
+
+If the value of the foo and the bar variables are the same. Otherwise, nothing is outputted.
 
 ## Templates
 
