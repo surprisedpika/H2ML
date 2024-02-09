@@ -6,6 +6,7 @@ export const defaultCompilerOptions: Required<CompilerOptions> = {
   logErrors: true,
   verbose: false,
   preserveComments: false,
+  evaluateExpressionsInComments: false,
 } as const;
 
 export const defaultParserOptions: htmlparser2.ParserOptions = {

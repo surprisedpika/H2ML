@@ -3,6 +3,7 @@ export type CompilerOptions = {
   logErrors?: boolean;
   verbose?: boolean;
   preserveComments?: boolean;
+  evaluateExpressionsInComments?: boolean;
 };
 
 export type Console = {

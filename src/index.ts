@@ -5,8 +5,6 @@ import type { CompilerOptions, Console, Repeat, AttributeSet } from "./types";
 
 import { defaultCompilerOptions, defaultParserOptions } from "./constants";
 
-//TODO: @var
-//TODO: mathematical expressions
 //TODO: Templates
 //TODO: Import
 //TODO: @if ?
@@ -157,9 +155,15 @@ const finishCompile = (
   c: Console
 ): string => {
   let out = "";
+  let shouldOutput: boolean = true;
   const variables: AttributeSet = {};
   const _evaluateExpressions = (data: string) =>
     evaluateExpressions(data, variables, c);
+  const appendToOutput = (data: string) => {
+    if (shouldOutput) {
+      out += data;
+    }
+  };
 
   const parser = new htmlparser2.Parser(
     {
@@ -174,8 +178,13 @@ const finishCompile = (
       },
       oncomment(data) {
         if (options.preserveComments) {
-          const str = `<!--${data}-->`;
-          out += str;
+          let str = "";
+          if (options.evaluateExpressionsInComments) {
+            str = `<!--${_evaluateExpressions(data)}-->`;
+          } else {
+            str = `<!--${data}-->`;
+          }
+          appendToOutput(str);
         }
       },
       onopentag(name, attribs: AttributeSet, _isImplied) {
@@ -184,8 +193,7 @@ const finishCompile = (
 
         if (!evaluatedName.startsWith("@")) {
           const joiner = attributes ? " " : "";
-          const str = `<${name}${joiner}${attributes}>`;
-          out += str;
+          appendToOutput(`<${name}${joiner}${attributes}>`);
         } else {
           switch (evaluatedName) {
             case "@var":
@@ -199,14 +207,13 @@ const finishCompile = (
               c.warn("Unknown H2ML tag", name);
               // If not h2ml tag, simply add to output
               const joiner = attributes ? " " : "";
-              const str = `<${evaluatedName}${joiner}${attributes}>`;
-              out += str;
+              appendToOutput(`<${name}${joiner}${attributes}>`);
               break;
           }
         }
       },
       ontext(data) {
-        out += _evaluateExpressions(data);
+        appendToOutput(_evaluateExpressions(data));
       },
       onclosetag(name, isImplied) {
         const evaluatedName = _evaluateExpressions(name);
@@ -214,12 +221,11 @@ const finishCompile = (
           case "@var":
             break;
           default:
-            if (isImplied) {
+            if (isImplied && shouldOutput) {
               out = out.slice(0, -1) + "/>";
               break;
             }
-            const str = `</${evaluatedName}>`;
-            out += str;
+            appendToOutput(`</${evaluatedName}>`);
             break;
         }
       },
@@ -263,5 +269,6 @@ console.log(
     logWarnings: true,
     verbose: false,
     preserveComments: true,
+    evaluateExpressionsInComments: false,
   })
 );
