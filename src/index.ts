@@ -5,9 +5,9 @@ import type { CompilerOptions, Console, Repeat, AttributeSet } from "./types";
 
 import { defaultCompilerOptions, defaultParserOptions } from "./constants";
 
-//TODO: Templates
-//TODO: Import
-//TODO: @if ?
+//TODO: @template
+//TODO: @import
+//TODO: @if
 
 const makeConsole = (options: CompilerOptions): Console => {
   return {
