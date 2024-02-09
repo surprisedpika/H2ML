@@ -90,7 +90,6 @@ const replaceRepeatTags = (
         }
       },
       onopentag(name, attribs: AttributeSet, _isImplied) {
-        // is h2ml tag
         switch (name) {
           case "@repeat":
             let count = Math.round(Number(attribs["count"])) ?? 1;
@@ -155,6 +154,7 @@ const finishCompile = (
   c: Console
 ): string => {
   let out = "";
+  let varDepth = 0;
   let shouldOutput: boolean = true;
   const variables: AttributeSet = {};
   const _evaluateExpressions = (data: string) =>
@@ -202,6 +202,8 @@ const finishCompile = (
                 variables[key] = replaced;
                 c.log("Variable", key, "set to", replaced);
               });
+              varDepth++;
+              shouldOutput = false;
               break;
             default:
               c.warn("Unknown H2ML tag", name);
@@ -219,6 +221,10 @@ const finishCompile = (
         const evaluatedName = _evaluateExpressions(name);
         switch (evaluatedName) {
           case "@var":
+            varDepth--;
+            if (varDepth === 0) {
+              shouldOutput = true;
+            }
             break;
           default:
             if (isImplied && shouldOutput) {
