@@ -20,6 +20,33 @@ const makeConsole = (options: CompilerOptions): Console => {
   } as const;
 };
 
+// Evaluates all mathematical expressions in a given string.
+// Mathematical expressions are contained within curly braces
+const evaluateExpressions = (
+  input: string,
+  variables: AttributeSet,
+  c: Console
+): string => {
+  c.log(`Evaluating variables in "${input}"`);
+  return input.replace(
+    // Regex matches any content contained within curly braces, as well as any immediately preceeding backslashes
+    /(\\*)\{([^{}]+)\}/g,
+    (_, escapeCharacters: string, content: string) => {
+      c.log(`  Match found: ${content}`);
+      const numDelimiters = escapeCharacters.length;
+      // If there are no backslashes, the expression is evaluated
+      if (numDelimiters == 0) {
+        const p = new Parser();
+        const expression = p.parse(content);
+        return expression.evaluate(variables);
+      }
+      c.log(`    Match escaped`);
+      // Otherwise, remove one backslash from the count and return the actual text of the expression.
+      return `${"\\".repeat(numDelimiters - 1)}{${content}}`;
+    }
+  );
+};
+
 // Converts an object of attribute names and values to a space-seperated string
 // E.G { class: "foo", id: "bar" } => "class='foo' id='bar'"
 const mapAttributes = (attributes: AttributeSet) => {
@@ -109,18 +136,9 @@ const replaceRepeatTags = (
             }
             break;
           default:
-            if (isImplied) {
-              // If self-closing tag, out will currently look like "...<br>". Change to "...<br/>"
-              out = out.slice(0, -1) + "/>";
-              repeat.forEach((layer) => {
-                layer.content.slice(0, -1);
-                layer.content += "/>";
-              });
-            } else {
-              const str = `</${name}>`;
-              out += str;
-              appendToRepeatLayers(str, repeat);
-            }
+            const str = `</${name}>`;
+            out += str;
+            appendToRepeatLayers(str, repeat);
             break;
         }
       },
@@ -132,59 +150,118 @@ const replaceRepeatTags = (
   return out;
 };
 
-// Evaluates all mathematical expressions in a given string.
-// Mathematical expressions are contained within curly braces
-const evaluateExpressions = (
+const finishCompile = (
   input: string,
-  variables: AttributeSet,
+  options: CompilerOptions,
+  parserOptions: htmlparser2.ParserOptions,
   c: Console
 ): string => {
-  c.log(`Evaluating variables in "${input}"`);
-  return input.replace(
-    // Regex matches any content contained within curly braces, as well as any immediately preceeding backslashes
-    /(\\*)\{([^{}]+)\}/g,
-    (_, escapeCharacters: string, content: string) => {
-      c.log(`  Match found: ${content}`);
-      const numDelimiters = escapeCharacters.length;
-      // If there are no backslashes, the expression is evaluated
-      if (numDelimiters == 0) {
-        const p = new Parser();
-        const expression = p.parse(content);
-        return expression.evaluate(variables);
-      }
-      c.log(`    Match escaped`);
-      // Otherwise, remove one backslash from the count and return the actual text of the expression.
-      return `${"\\".repeat(numDelimiters - 1)}{${content}}`;
-    }
+  let out = "";
+  const variables: AttributeSet = {};
+  const _evaluateExpressions = (data: string) =>
+    evaluateExpressions(data, variables, c);
+
+  const parser = new htmlparser2.Parser(
+    {
+      onparserinit() {
+        c.log("Beginning final translation");
+      },
+      onend() {
+        c.log("Translation finished");
+      },
+      onerror(error) {
+        c.error(error);
+      },
+      oncomment(data) {
+        if (options.preserveComments) {
+          const str = `<!--${data}-->`;
+          out += str;
+        }
+      },
+      onopentag(name, attribs: AttributeSet, _isImplied) {
+        const attributes = _evaluateExpressions(mapAttributes(attribs));
+        const evaluatedName = _evaluateExpressions(name);
+
+        if (!evaluatedName.startsWith("@")) {
+          const joiner = attributes ? " " : "";
+          const str = `<${name}${joiner}${attributes}>`;
+          out += str;
+        } else {
+          switch (evaluatedName) {
+            case "@var":
+              Object.entries(attribs).map(([key, value]) => {
+                const replaced = _evaluateExpressions(value);
+                variables[key] = replaced;
+                c.log("Variable", key, "set to", replaced);
+              });
+              break;
+            default:
+              c.warn("Unknown H2ML tag", name);
+              // If not h2ml tag, simply add to output
+              const joiner = attributes ? " " : "";
+              const str = `<${evaluatedName}${joiner}${attributes}>`;
+              out += str;
+              break;
+          }
+        }
+      },
+      ontext(data) {
+        out += _evaluateExpressions(data);
+      },
+      onclosetag(name, isImplied) {
+        const evaluatedName = _evaluateExpressions(name);
+        switch (evaluatedName) {
+          case "@var":
+            break;
+          default:
+            if (isImplied) {
+              out = out.slice(0, -1) + "/>";
+              break;
+            }
+            const str = `</${evaluatedName}>`;
+            out += str;
+            break;
+        }
+      },
+    },
+    parserOptions
   );
+  parser.write(input);
+  parser.end();
+  return out;
 };
 
 export default function compile(input: string, opts: CompilerOptions): string {
   const options = { ...defaultCompilerOptions, ...opts } as const;
-
   const c = makeConsole(options);
 
-  const replacedRepeatTags = replaceRepeatTags(
-    input,
-    options,
-    defaultParserOptions,
-    c
-  );
+  let replacedRepeatTags: string = "";
+  if (!input.includes("@repeat")) {
+    //If there are no repeat tags, theres no point replacing all the repeat tags
+    replacedRepeatTags = input;
+  } else {
+    replacedRepeatTags = replaceRepeatTags(
+      input,
+      options,
+      defaultParserOptions,
+      c
+    );
+  }
 
-  return replacedRepeatTags;
+  console.log(replacedRepeatTags);
+
+  return finishCompile(replacedRepeatTags, options, defaultParserOptions, c);
 }
 
-const test = "<@repeat count='4'><@repeat count='2'>_</@repeat></@repeat>";
-
-// desired output:
-// 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536,
+const test = `
+<@var x='1' /><@repeat count='5'><@repeat count='5'>{x}</@repeat><@var x='{x + 1}'/></@repeat>`;
 
 console.log(test);
 console.log(
   compile(test, {
     logErrors: true,
     logWarnings: true,
-    verbose: true,
+    verbose: false,
     preserveComments: true,
   })
 );
