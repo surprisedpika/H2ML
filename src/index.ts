@@ -2,12 +2,17 @@ import * as htmlparser2 from "htmlparser2";
 import { Parser } from "expr-eval";
 
 import type { CompilerOptions, Console, Repeat, AttributeSet } from "./types";
-
 import { defaultCompilerOptions, defaultParserOptions } from "./constants";
 
 //TODO: @template
 //TODO: @import
-//TODO: @if
+
+/*//TODO
+  Known bugs / unsolved edge cases
+
+  - Should allow backslash escaping in tag names beginning with @.
+  - 
+*/
 
 const makeConsole = (options: CompilerOptions): Console => {
   return {
@@ -153,13 +158,19 @@ const finishCompile = (
   parserOptions: htmlparser2.ParserOptions,
   c: Console
 ): string => {
-  let out = "";
-  let varDepth = 0;
-  let shouldOutput: boolean = true;
+  let out: string = "";
+
   const variables: AttributeSet = {};
-  const _evaluateExpressions = (data: string) =>
-    evaluateExpressions(data, variables, c);
-  const appendToOutput = (data: string) => {
+  const ifBuffer: boolean[] = [];
+
+  let varDepth: number = 0;
+  let shouldOutput: boolean = true;
+
+  const _evaluateExpressions = (data: string): string => {
+    return evaluateExpressions(data, variables, c);
+  };
+
+  const appendToOutput = (data: string): void => {
     if (shouldOutput) {
       out += data;
     }
@@ -188,14 +199,41 @@ const finishCompile = (
         }
       },
       onopentag(name, attribs: AttributeSet, _isImplied) {
-        const attributes = _evaluateExpressions(mapAttributes(attribs));
-        const evaluatedName = _evaluateExpressions(name);
+        // c.table(attribs);
 
-        if (!evaluatedName.startsWith("@")) {
+        if (!name.startsWith("@")) {
+          const attributes = _evaluateExpressions(mapAttributes(attribs));
           const joiner = attributes ? " " : "";
           appendToOutput(`<${name}${joiner}${attributes}>`);
         } else {
-          switch (evaluatedName) {
+          switch (name) {
+            case "@if":
+              let conditionIsTrue: boolean;
+
+              const value = attribs.condition;
+              if (value == undefined) {
+                c.warn(
+                  "No 'condition' attribute found on @if with attributes:"
+                );
+                c.table(attribs);
+                conditionIsTrue = true;
+              } else {
+                const matches = value.match(/\{([^}]+)\}/);
+                if (matches == null) {
+                  c.warn("Invalid 'condition' attribute found on @if", value);
+                  conditionIsTrue = true;
+                } else {
+                  const match = matches[1];
+                  const p = new Parser();
+                  let expression = p.parse(match);
+                  conditionIsTrue = Boolean(expression.evaluate(variables));
+                }
+              }
+              ifBuffer.push(conditionIsTrue);
+              if (!conditionIsTrue) {
+                shouldOutput = false;
+              }
+              break;
             case "@var":
               Object.entries(attribs).map(([key, value]) => {
                 const replaced = _evaluateExpressions(value);
@@ -206,6 +244,7 @@ const finishCompile = (
               shouldOutput = false;
               break;
             default:
+              const attributes = _evaluateExpressions(mapAttributes(attribs));
               c.warn("Unknown H2ML tag", name);
               // If not h2ml tag, simply add to output
               const joiner = attributes ? " " : "";
@@ -218,11 +257,16 @@ const finishCompile = (
         appendToOutput(_evaluateExpressions(data));
       },
       onclosetag(name, isImplied) {
-        const evaluatedName = _evaluateExpressions(name);
-        switch (evaluatedName) {
+        switch (name) {
           case "@var":
             varDepth--;
-            if (varDepth === 0) {
+            if (varDepth === 0 && ifBuffer[ifBuffer.length - 1]) {
+              shouldOutput = true;
+            }
+            break;
+          case "@if":
+            ifBuffer.pop();
+            if (varDepth === 0 && ifBuffer[ifBuffer.length - 1]) {
               shouldOutput = true;
             }
             break;
@@ -231,7 +275,7 @@ const finishCompile = (
               out = out.slice(0, -1) + "/>";
               break;
             }
-            appendToOutput(`</${evaluatedName}>`);
+            appendToOutput(`</${name}>`);
             break;
         }
       },
@@ -266,14 +310,14 @@ export default function compile(input: string, opts: CompilerOptions): string {
 }
 
 const test = `
-<@var x='1' /><@repeat count='5'><@repeat count='5'>{x}</@repeat><@var x='{x + 1}'/></@repeat>`;
+<@if condition='{1 == 1}'>holy<@if condition='{1 == 2}'>guacamole</@if>frotnite</@if>`;
 
 console.log(test);
 console.log(
   compile(test, {
     logErrors: true,
     logWarnings: true,
-    verbose: false,
+    verbose: true,
     preserveComments: true,
     evaluateExpressionsInComments: false,
   })
